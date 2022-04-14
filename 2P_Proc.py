@@ -51,11 +51,15 @@ filename = sys.argv[1]
 
 # Read in file, seems to invert it? Or the imwrite inverts it
 tif = TiffFile(filename)
-for page in tif.pages:
-    image = page.asarray()
-    stack = np.dstack((stack,image))
+scan = tif.asarray() # Imports as 'CZYX', C = 0 is
+dStack = scan[0]
+rStack = scan[1]
 
-[imHeight, imWidth, imSlices] = stack.shape
+[imSlices, imHeight, imWidth] = rStack.shape
+
+# Transform to be XYZ, might need to flip and rotate again?
+#dStack = np.transpose(dStack, (2,1,0))
+#rStack = np.transpose(rStack, (2,1,0))
 
 # Parameter Extraction from filename - would like to do it from TIFF tags, but running into issues
 # Example filename - 2022-03-29_Baseline_Stack_1_lam_880nm_eom_100_power_6_75_pmt_56_size_400x400mic_pixels_510x510_freq_800_LinAvg_1_range_0mic-neg200mic_slice_1micPMT - PMT [HS_1] _C6.ome
@@ -64,7 +68,7 @@ width = int(filename[filename.find('size_')+5:filename.find('size_')+8])
 height = int(filename[filename.find('mic')-3:filename.find('mic')])
 depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 
-## Create idealized PSF for Weiner Filter
+## Create idealized PSF for Weiner Filter, rhodamine
 emw = 520
 args = {
     'shape': (imWidth, imHeight), # number of samples in z and r direction
@@ -88,13 +92,14 @@ PSF = np.concatenate((psf4,psf3),axis=0)
 PSF = PSF[255:765,255:765]
 
 # Apply Weiner Filter
-for scan in stack:
-    procImage = restoration.weiner(scan, PSF, 2.8) # What is this 2.8 - balance
+procStack = np.empty((imHeight, imWidth, imSlices))
+for image in rStack:
+    procImage = restoration.wiener(image, PSF, 2.8) # What is this 2.8 - balance
     procStack = np.dstack((procStack,procImage))
 
 # Saving process to have same orientation in ImageJ and display
 tSave = np.transpose(procStack,(2,1,0))
 tSave = np.rot90(tSave,3,axes=(1,2))
 tSave = np.flip(tSave,2)
-outfilename = filename[0:filename.find('.tif')] + '_WF.tif'
+outfilename = filename[0:filename.find('.tif')] + '_WF_rhodamine.tif'
 imwrite(outfilename, tSave, photometric='minisblack')
