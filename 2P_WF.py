@@ -6,11 +6,9 @@ from tifffile import TiffFile
 from matplotlib import pyplot as plt
 from skimage import color, data, restoration, exposure, io
 
-### Rewrite for auto local thresholding with Otsu (tested in ImageJ)
-### Worked the best for cross-sectional analysis
-### - Needs a method to assess circularity of various labeled sections
-### - Should also have a method to assess the # of pixels and exclude capillaries
-###    and lateral vessels of course
+"""Currently only applied to Rhodamine scans, need emission wavelength 
+   for FITC/DiO, easily applied to those though.
+   Formatting: 2P_WF.py <filename>"""
 
 # Define functions for visualization
 def multi_slice_viewer(volume):
@@ -100,7 +98,7 @@ PSF = PSF[255:765,255:765]
 # Apply Weiner Filter
 procStack = np.empty((imHeight, imWidth))
 for image in rStack:
-    procImage = restoration.wiener(image, PSF, 2.8) # What is this 2.8 - balance
+    procImage = restoration.wiener(image, PSF, 2.8,clip=False).astype('uint16') # What is this 2.8 - balance
     procStack = np.dstack((procStack,procImage))
 
 procStack = procStack[:,:,1:imSlices+1] # removes initial empty array
@@ -110,4 +108,4 @@ tSave = np.transpose(procStack,(2,1,0))
 tSave = np.rot90(tSave,3,axes=(1,2))
 tSave = np.flip(tSave,2)
 outfilename = filename[0:filename.find('.ome.tif')] + '_WF_rhodamine.tif'
-imwrite('test.tif', tSave, photometric='minisblack')
+imwrite('test.tif', tSave, imagej=True, photometric='minisblack')
