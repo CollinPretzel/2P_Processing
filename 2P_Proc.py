@@ -1,10 +1,12 @@
-import psf
 import sys
 import numpy as np
 from tifffile import imwrite
 from tifffile import TiffFile
 from matplotlib import pyplot as plt
 from skimage import color, data, restoration, exposure, io
+from skimage.morphology import disk
+from skimage.filters import threshold_otsu, rank
+from skimage.util import img_as_ubyte
 
 ### Rewrite for auto local thresholding with Otsu (tested in ImageJ)
 ### Worked the best for cross-sectional analysis
@@ -41,6 +43,17 @@ def next_slice(ax):
     ax.index = (ax.index + 1) % volume.shape[0]
     ax.images[0].set_array(volume[ax.index])
 
+def otsuThresh(img, radius):
+    img = img_as_ubyte(data.page())
+
+    radius = 15
+    selem = disk(radius)
+
+    local_otsu = rank.otsu(img, selem)
+    threshold_global_otsu = threshold_otsu(img)
+    global_otsu = img >= threshold_global_otsu
+    return img >= local_otsu
+
 # Structure of function call: python 2P_Proc.py <filtered filename> <> <>
 
 plt.rcParams['figure.figsize'] = [10, 10]
@@ -76,7 +89,7 @@ depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 # Apply Otsu Thresholding
 threshStack = np.empty((imHeight, imWidth))
 for image in rStack:
-    threshImage = restoration.wiener(image, PSF, 2.8) # What is this 2.8 - balance
+    threshImage = otsuThresh(image, PSF, 2.8) # What is this 2.8 - balance
     threshStack = np.dstack((threshStack,threshImage))
 
 threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
