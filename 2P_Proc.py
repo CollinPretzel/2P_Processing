@@ -44,15 +44,12 @@ def next_slice(ax):
     ax.images[0].set_array(volume[ax.index])
 
 def otsuThresh(img, radius):
-    img = img_as_ubyte(data.page())
-
-    radius = 15
+    img = img.astype('uint16')
     selem = disk(radius)
-
     local_otsu = rank.otsu(img, selem)
-    threshold_global_otsu = threshold_otsu(img)
-    global_otsu = img >= threshold_global_otsu
-    return img >= local_otsu
+    # threshold_global_otsu = threshold_otsu(img)
+    # global_otsu = img >= threshold_global_otsu
+    return img >= local_otsu # Was >=
 
 # Structure of function call: python 2P_Proc.py <filtered filename> <> <>
 
@@ -71,10 +68,10 @@ filename = sys.argv[1]
 # Read in file, seems to invert it? Or the imwrite inverts it
 tif = TiffFile(filename)
 scan = tif.asarray() # Imports as 'CZYX', C = 0 is
-dStack = scan[0]
-rStack = scan[1]
+#dStack = scan[0]
+#rStack = scan[1]
 
-[imSlices, imHeight, imWidth] = rStack.shape
+[imSlices, imHeight, imWidth] = scan.shape
 
 # Transform to be XYZ, might need to flip and rotate again?
 #dStack = np.transpose(dStack, (2,1,0))
@@ -88,15 +85,16 @@ depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 
 # Apply Otsu Thresholding
 threshStack = np.empty((imHeight, imWidth))
-for image in rStack:
-    threshImage = otsuThresh(image, PSF, 2.8) # What is this 2.8 - balance
-    threshStack = np.dstack((threshStack,threshImage))
+for image in scan:
+    threshImage = otsuThresh(image, 15)
+    threshStack = np.dstack((threshStack, threshImage))
 
 threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
 
 # Saving process to have same orientation in ImageJ and display, might be unnecessary?
-tSave = np.transpose(procStack,(2,1,0))
+tSave = np.transpose(threshStack,(2,1,0))
 tSave = np.rot90(tSave,3,axes=(1,2))
 tSave = np.flip(tSave,2)
+tSave = tSave.astype('float32')
 outfilename = filename[0:filename.find('.ome.tif')] + '_thresh_rhodamine.tif'
 imwrite('test.tif', tSave, photometric='minisblack')

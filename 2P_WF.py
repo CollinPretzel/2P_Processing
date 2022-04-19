@@ -98,7 +98,7 @@ PSF = PSF[255:765,255:765]
 # Apply Weiner Filter
 procStack = np.empty((imHeight, imWidth))
 for image in rStack:
-    procImage = restoration.wiener(image, PSF, 2.8,clip=False).astype('uint16') # What is this 2.8 - balance
+    procImage = restoration.wiener(image, PSF, 2.8,clip=False) # What is this 2.8 - balance
     procStack = np.dstack((procStack,procImage))
 
 procStack = procStack[:,:,1:imSlices+1] # removes initial empty array
@@ -107,5 +107,6 @@ procStack = procStack[:,:,1:imSlices+1] # removes initial empty array
 tSave = np.transpose(procStack,(2,1,0))
 tSave = np.rot90(tSave,3,axes=(1,2))
 tSave = np.flip(tSave,2)
+tSave = tSave.astype('float32')
 outfilename = filename[0:filename.find('.ome.tif')] + '_WF_rhodamine.tif'
-imwrite('test.tif', tSave, imagej=True, photometric='minisblack')
+imwrite(outfilename, tSave, imagej=True, photometric='minisblack')
