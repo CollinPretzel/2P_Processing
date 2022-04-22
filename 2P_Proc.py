@@ -1,12 +1,16 @@
 import sys
+import cv2
+import math
+import warnings
 import numpy as np
 from tifffile import imwrite
 from tifffile import TiffFile
 from matplotlib import pyplot as plt
 from skimage import color, data, restoration, exposure, io
-from skimage.morphology import disk
+from skimage.morphology import disk, reconstruction
 from skimage.filters import threshold_otsu, rank
 from skimage.util import img_as_ubyte
+from skimage.measure import label, regionprops, regionprops_table
 
 ### Rewrite for auto local thresholding with Otsu (tested in ImageJ)
 ### Worked the best for cross-sectional analysis
@@ -51,10 +55,18 @@ def otsuThresh(img, radius):
     # global_otsu = img >= threshold_global_otsu
     return img >= local_otsu # Was >=
 
+def trans(img):
+    tSave = np.transpose(img,(2,1,0))
+    tSave = np.rot90(tSave,3,axes=(1,2))
+    tSave = np.flip(tSave,2)
+    return tSave
+
 # Structure of function call: python 2P_Proc.py <filtered filename> <> <>
 
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
+
+warnings.filterwarnings('ignore', '.*rank.*') # Ignores warnings in Otsu thresh about bit depth
 
 # Variables that will be used throughout the processing pipeline
 global stack, threshStack
@@ -90,11 +102,72 @@ for image in scan:
     threshStack = np.dstack((threshStack, threshImage))
 
 threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
+threshStack = trans(threshStack)
 
+# Remove any excessive labels
+properties = ['area', 'coords', 'num_pixels', 'perimeter']
+aMasks = np.empty((imHeight, imWidth))
+eMasks = np.empty((imHeight, imWidth))
+cMasks = np.empty((imHeight, imWidth))
+for image in threshStack:
+    labelImg = label(image)
+    regions = regionprops(labelImg)
+    aIndices = []
+    areas = []
+    eccIndices = []
+    eccs = []
+    circIndices = []
+    circs = []
+    aMask = np.zeros((imHeight, imWidth))
+    eMask = np.zeros((imHeight, imWidth))
+    cMask = np.zeros((imHeight, imWidth))
+    for num, x in enumerate(regions):
+        area = x.area_filled # What if you did convex area, or feret_diameter_max
+        perimeter = x.perimeter
+        ecc = x.eccentricity
+        circ = (4*math.pi*area)/(perimeter**2)
+        if (area > 100) and (area < 500):# and (ecc < 0.78) and (circ > 0.25):
+            aIndices.append(num)
+            areas.append(area)
+            if (ecc < 0.8):
+                eccIndices.append(num)
+                eccs.append(ecc)
+                if (circ > 0.15) and (circ < 1):
+                    circIndices.append(num)
+                    circs.append(circ)
+    for index in aIndices:
+        aMask += (labelImg==index+1).astype(int)
+    for index in eccIndices:
+        eMask += (labelImg==index+1).astype(int)
+    for index in circIndices:
+        cMask += (labelImg==index+1).astype(int)
+    # Fill in mask w/ skimage.reconstruction - erosion
+    seed = np.copy(aMask)
+    seed[1:-1,1:-1] = 1
+    aMask = reconstruction(seed, aMask, method = 'erosion')
+    seed = np.copy(eMask)
+    seed[1:-1,1:-1] = 1
+    eMask = reconstruction(seed, eMask, method = 'erosion')
+    seed = np.copy(aMask)
+    seed[1:-1,1:-1] = 1
+    cMask = reconstruction(seed, cMask, method = 'erosion')
+    aMasks = np.dstack((aMasks, aMask))
+    eMasks = np.dstack((eMasks, eMask))
+    cMasks = np.dstack((cMasks, cMask))
+
+aMasks = aMasks[:,:,1:imSlices+1]
+aMasks = trans(aMasks)
+eMasks = eMasks[:,:,1:imSlices+1]
+eMasks = trans(eMasks)
+cMasks = cMasks[:,:,1:imSlices+1]
+cMasks = trans(cMasks)
 # Saving process to have same orientation in ImageJ and display, might be unnecessary?
-tSave = np.transpose(threshStack,(2,1,0))
-tSave = np.rot90(tSave,3,axes=(1,2))
-tSave = np.flip(tSave,2)
-tSave = tSave.astype('float32')
-outfilename = filename[0:filename.find('.ome.tif')] + '_thresh_rhodamine.tif'
-imwrite('test.tif', tSave, photometric='minisblack')
+aSave = aMasks.astype('float32')
+eSave = eMasks.astype('float32')
+cSave = cMasks.astype('float32')
+tSave = threshStack.astype('float32')
+outfilename = filename[0:filename.find('.ome.tif')] + '_CS_Mask.tif'
+imwrite('otsu.tif', tSave, photometric='minisblack')
+imwrite('aMasks.tif', aSave, photometric='minisblack')
+imwrite('eMasks.tif', eSave, photometric='minisblack')
+imwrite('cMasks.tif', cSave, photometric='minisblack')
