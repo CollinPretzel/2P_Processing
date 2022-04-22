@@ -161,6 +161,7 @@ eMasks = eMasks[:,:,1:imSlices+1]
 eMasks = trans(eMasks)
 cMasks = cMasks[:,:,1:imSlices+1]
 cMasks = trans(cMasks)
+## NOW TACKLE THESE MASKS SIDEWAYS TO GET SOME MORE CONNECTED COMPONENTS
 # Saving process to have same orientation in ImageJ and display, might be unnecessary?
 aSave = aMasks.astype('float32')
 eSave = eMasks.astype('float32')
