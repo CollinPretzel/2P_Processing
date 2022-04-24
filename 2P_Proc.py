@@ -176,25 +176,23 @@ for scan in eMasks:
     vMasks = np.dstack((vMasks,exScan))
 
 vMasks = vMasks[:,:,1:imWidth+1]
-
-v2Masks = np.empty((imHeight, imSlices))
-for scan in vMasks:
-    scan = np.array(scan)
-    exScan = np.zeros_like(scan)
-    for rid, row in enumerate(scan):
-        for pid, pixel in enumerate(row):
-            sect = np.array(scan[rid,pid:pid+15])
-            if (sect[0]==1): # Check for connected values to a logical 1
-                idx = np.where(sect == 1)[0]
-                ext = idx[idx.size-1]
-                exScan[rid,pid:pid+ext] = 1
-    v2Masks = np.dstack((v2Masks,exScan))
-
-v2Masks = v2Masks[:,:,1:imWidth+1]
 vMasks = np.transpose(vMasks,(0,2,1))
-v2Masks = np.transpose(vMasks,(0,2,1))
+vMasks = trans(vMasks) # OOOHHHH Man, I need to check out the orientations
 
-# Another connected component analysis to isolate and remove the smaller regions to try to reduce error
+# Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
+lv = label(vMasks)
+regions = regionprops(lv)
+fullMask = np.empty((imHeight,imWidth,imSlices))
+vidx = []
+areas = []
+for num, x in enumerate(regions):
+    area = x.area
+    if (area > 500):# and (ecc < 0.78) and (circ > 0.25):
+        vidx.append(num)
+        areas.append(area)
+        
+for index in vidx:
+    fullMask += (lv==index+1).astype(int)
 
 # Saving process to have same orientation in ImageJ and display, might be unnecessary?
 aMasks = trans(aMasks)
