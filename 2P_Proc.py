@@ -156,13 +156,50 @@ for image in threshStack:
     cMasks = np.dstack((cMasks, cMask))
 
 aMasks = aMasks[:,:,1:imSlices+1]
-aMasks = trans(aMasks)
 eMasks = eMasks[:,:,1:imSlices+1]
-eMasks = trans(eMasks)
 cMasks = cMasks[:,:,1:imSlices+1]
-cMasks = trans(cMasks)
-## NOW TACKLE THESE MASKS SIDEWAYS TO GET SOME MORE CONNECTED COMPONENTS
+
+## NOW TACKLE THESE MASKS SIDEWAYS TO GET SOME MORE CONNECTED COMPONENTS - start w/ emask
+## I need to make this more efficient
+
+vMasks = np.empty((imHeight, imSlices))
+for scan in eMasks:
+    scan = np.array(scan)
+    exScan = np.zeros_like(scan)
+    for rid, row in enumerate(scan):
+        for pid, pixel in enumerate(row):
+            sect = np.array(scan[rid,pid:pid+15])
+            if (sect[0]==1): # Check for connected values to a logical 1
+                idx = np.where(sect == 1)[0]
+                ext = idx[idx.size-1]
+                exScan[rid,pid:pid+ext] = 1
+    vMasks = np.dstack((vMasks,exScan))
+
+vMasks = vMasks[:,:,1:imWidth+1]
+
+v2Masks = np.empty((imHeight, imSlices))
+for scan in vMasks:
+    scan = np.array(scan)
+    exScan = np.zeros_like(scan)
+    for rid, row in enumerate(scan):
+        for pid, pixel in enumerate(row):
+            sect = np.array(scan[rid,pid:pid+15])
+            if (sect[0]==1): # Check for connected values to a logical 1
+                idx = np.where(sect == 1)[0]
+                ext = idx[idx.size-1]
+                exScan[rid,pid:pid+ext] = 1
+    v2Masks = np.dstack((v2Masks,exScan))
+
+v2Masks = v2Masks[:,:,1:imWidth+1]
+vMasks = np.transpose(vMasks,(0,2,1))
+v2Masks = np.transpose(vMasks,(0,2,1))
+
+# Another connected component analysis to isolate and remove the smaller regions to try to reduce error
+
 # Saving process to have same orientation in ImageJ and display, might be unnecessary?
+aMasks = trans(aMasks)
+eMasks = trans(eMasks)
+cMasks = trans(cMasks)
 aSave = aMasks.astype('float32')
 eSave = eMasks.astype('float32')
 cSave = cMasks.astype('float32')
