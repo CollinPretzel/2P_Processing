@@ -105,7 +105,6 @@ threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
 threshStack = trans(threshStack)
 
 # Remove any excessive labels
-properties = ['area', 'coords', 'num_pixels', 'perimeter']
 aMasks = np.empty((imHeight, imWidth))
 eMasks = np.empty((imHeight, imWidth))
 cMasks = np.empty((imHeight, imWidth))
@@ -176,8 +175,6 @@ for scan in eMasks:
     vMasks = np.dstack((vMasks,exScan))
 
 vMasks = vMasks[:,:,1:imWidth+1]
-vMasks = np.transpose(vMasks,(0,2,1))
-vMasks = trans(vMasks) # OOOHHHH Man, I need to check out the orientations
 
 # Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
 lv = label(vMasks)
@@ -187,12 +184,17 @@ vidx = []
 areas = []
 for num, x in enumerate(regions):
     area = x.area
-    if (area > 500):# and (ecc < 0.78) and (circ > 0.25):
+    if (area > 8000):# and (ecc < 0.78) and (circ > 0.25):
         vidx.append(num)
         areas.append(area)
-        
+
 for index in vidx:
     fullMask += (lv==index+1).astype(int)
+
+# Special transformation for saving the full mask
+fullMask = np.transpose(fullMask, (2,0,1))
+fullMask = np.rot90(fullMask, 1, axes=(1,2))
+fullMask = np.flip(fullMask,1)
 
 # Saving process to have same orientation in ImageJ and display, might be unnecessary?
 aMasks = trans(aMasks)
@@ -202,8 +204,14 @@ aSave = aMasks.astype('float32')
 eSave = eMasks.astype('float32')
 cSave = cMasks.astype('float32')
 tSave = threshStack.astype('float32')
-outfilename = filename[0:filename.find('.ome.tif')] + '_CS_Mask.tif'
-imwrite('otsu.tif', tSave, photometric='minisblack')
-imwrite('aMasks.tif', aSave, photometric='minisblack')
-imwrite('eMasks.tif', eSave, photometric='minisblack')
-imwrite('cMasks.tif', cSave, photometric='minisblack')
+fullSave = fullMask.astype('float32')
+threshOFN = filename[0:filename.find('.ome.tif')] + '_OTSU_Mask.tif'
+areaOFN = filename[0:filename.find('.ome.tif')] + '_AREA_Mask.tif'
+eccOFN = filename[0:filename.find('.ome.tif')] + '_ECC_Mask.tif'
+circOFN = filename[0:filename.find('.ome.tif')] + '_CIRC_Mask.tif'
+vesselOFN = filename[0:filename.find('.ome.tif')] + '_FULL_Mask.tif'
+imwrite(threshOFN, tSave, photometric='minisblack')
+imwrite(areaOFN, aSave, photometric='minisblack')
+imwrite(eccOFN, eSave, photometric='minisblack')
+imwrite(circOFN, cSave, photometric='minisblack')
+imwrite(vesselOFN, fullSave, photometric='minisblack')
