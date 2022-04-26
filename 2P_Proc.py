@@ -1,6 +1,7 @@
 import sys
 import cv2
 import math
+import time
 import warnings
 import numpy as np
 from tifffile import imwrite
@@ -105,6 +106,7 @@ threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
 threshStack = trans(threshStack)
 
 # Remove any excessive labels
+start = time.perf_counter()
 aMasks = np.empty((imHeight, imWidth))
 eMasks = np.empty((imHeight, imWidth))
 cMasks = np.empty((imHeight, imWidth))
@@ -157,21 +159,22 @@ for image in threshStack:
 aMasks = aMasks[:,:,1:imSlices+1]
 eMasks = eMasks[:,:,1:imSlices+1]
 cMasks = cMasks[:,:,1:imSlices+1]
+print(time.perf_counter()-start)
 
 ## NOW TACKLE THESE MASKS SIDEWAYS TO GET SOME MORE CONNECTED COMPONENTS - start w/ emask
-## I need to make this more efficient
+## Takes 68.5 seconds for a 510x201x510 scan
 
 vMasks = np.empty((imHeight, imSlices))
 for scan in eMasks:
     scan = np.array(scan)
     exScan = np.zeros_like(scan)
     for rid, row in enumerate(scan):
-        for pid, pixel in enumerate(row):
+        pidx = np.where(row==1)[0]
+        for pid in pidx:
             sect = np.array(scan[rid,pid:pid+15])
-            if (sect[0]==1): # Check for connected values to a logical 1
-                idx = np.where(sect == 1)[0]
-                ext = idx[idx.size-1]
-                exScan[rid,pid:pid+ext] = 1
+            idx = np.where(sect == 1)[0]
+            ext = idx[idx.size-1]
+            exScan[rid,pid:pid+ext] = 1
     vMasks = np.dstack((vMasks,exScan))
 
 vMasks = vMasks[:,:,1:imWidth+1]
