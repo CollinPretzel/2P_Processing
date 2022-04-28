@@ -8,48 +8,12 @@ from skimage import color, data, restoration, exposure, io
 
 """Currently only applied to Rhodamine scans, need emission wavelength 
    for FITC/DiO, easily applied to those though.
-   Formatting: 2P_WF.py <filename>"""
-
-# Define functions for visualization
-def multi_slice_viewer(volume):
-    fig, ax = plt.subplots()
-    ax.volume = volume
-    ax.index = volume.shape[0] // 2
-    ax.imshow(volume[ax.index])
-    fig.canvas.mpl_connect('key_press_event', process_key)
-
-def process_key(event):
-    fig = event.canvas.figure
-    ax = fig.axes[0]
-    if event.key == 'j':
-        previous_slice(ax)
-    elif event.key == 'k':
-        next_slice(ax)
-    fig.canvas.draw()
-
-def previous_slice(ax):
-    """Go to the previous slice."""
-    volume = ax.volume
-    ax.index = (ax.index - 1) % volume.shape[0]  # wrap around using %
-    ax.images[0].set_array(volume[ax.index])
-
-def next_slice(ax):
-    """Go to the next slice."""
-    volume = ax.volume
-    ax.index = (ax.index + 1) % volume.shape[0]
-    ax.images[0].set_array(volume[ax.index])
+   Function Call: 2P_WF.py <filename>"""
 
 # Structure of function call: python 2P_Proc.py <filename> <> <>
 
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
-
-# Variables that will be used throughout the processing pipeline
-global stack, procStack
-global imHeight, imWidth, imSlices, xRes, yRes, zRes
-# Extract these variables from filename, idk how to access tags
-global height, width, depth
-global exw, emw, freq
 
 filename = sys.argv[1]
 
@@ -57,9 +21,9 @@ filename = sys.argv[1]
 tif = TiffFile(filename)
 scan = tif.asarray() # Imports as 'CZYX', C = 0 is
 dStack = scan[0]
-rStack = scan[1]
+rhodStack = scan[1]
 
-[imSlices, imHeight, imWidth] = rStack.shape
+[imSlices, imHeight, imWidth] = rhodStack.shape
 
 # Transform to be XYZ, might need to flip and rotate again?
 #dStack = np.transpose(dStack, (2,1,0))
@@ -74,7 +38,7 @@ depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 
 ## Create idealized PSF for Weiner Filter, rhodamine
 emw = 520
-args = {
+args_rhod = {
     'shape': (imWidth, imHeight), # number of samples in z and r direction
     'dims': (200, 200), # size in z and r direction in micrometers - why not 200, and what is r?
     'ex_wavelen': exw,
@@ -86,7 +50,7 @@ args = {
     'pinhole_shape': 'round',
 }
 
-obsvol = psf.PSF(psf.ISOTROPIC | psf.TWOPHOTON, **args)
+obsvol = psf.PSF(psf.ISOTROPIC | psf.TWOPHOTON, **args_rhod)
 psf1 = obsvol.slice(0)
 psf2 = np.flip(psf1, axis=1)
 psf3 = np.concatenate((psf2,psf1),axis=1)
@@ -97,13 +61,13 @@ PSF = PSF[255:765,255:765]
 
 # Apply Weiner Filter
 procStack = np.empty((imHeight, imWidth))
-for image in rStack:
+for image in rhodStack:
     procImage = restoration.wiener(image, PSF, 2.8,clip=False) # What is this 2.8 - balance
     procStack = np.dstack((procStack,procImage))
 
 procStack = procStack[:,:,1:imSlices+1] # removes initial empty array
 
-# Saving process to have same orientation in ImageJ and display, might be unnecessary?
+# Saving process - Make sure to save both channels
 tSave = np.transpose(procStack,(2,1,0))
 tSave = np.rot90(tSave,3,axes=(1,2))
 tSave = np.flip(tSave,2)

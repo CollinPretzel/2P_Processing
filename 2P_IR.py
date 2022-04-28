@@ -14,45 +14,11 @@ from skimage.measure import label, regionprops
 from skimage.registration import optical_flow_tvl1
 from skimage.transform import warp
 
-### Rewrite for Perivascular Spacing after VE
-### Or rewrite for cross scan registration... do I use otsu thresholding or what?
-
-# Define functions for visualization
-def multi_slice_viewer(volume):
-    fig, ax = plt.subplots()
-    ax.volume = volume
-    ax.index = volume.shape[0] // 2
-    ax.imshow(volume[ax.index])
-    fig.canvas.mpl_connect('key_press_event', process_key)
-
-def process_key(event):
-    fig = event.canvas.figure
-    ax = fig.axes[0]
-    if event.key == 'j':
-        previous_slice(ax)
-    elif event.key == 'k':
-        next_slice(ax)
-    fig.canvas.draw()
-
-def previous_slice(ax):
-    """Go to the previous slice."""
-    volume = ax.volume
-    ax.index = (ax.index - 1) % volume.shape[0]  # wrap around using %
-    ax.images[0].set_array(volume[ax.index])
-
-def next_slice(ax):
-    """Go to the next slice."""
-    volume = ax.volume
-    ax.index = (ax.index + 1) % volume.shape[0]
-    ax.images[0].set_array(volume[ax.index])
-
-def otsuThresh(img, radius):
-    img = img.astype('uint16')
-    selem = disk(radius)
-    local_otsu = rank.otsu(img, selem)
-    # threshold_global_otsu = threshold_otsu(img)
-    # global_otsu = img >= threshold_global_otsu
-    return img >= local_otsu # Was >=
+"""Two Photon Internal Registration Function
+Designed to align all images to reduce the impact of breathing or motion artifacts
+Function call - 2P_IR.py <filename>
+I still need to reduce the number of imports and see if I can expedite the process
+OH and check whether it's more effective before or after WF"""
 
 def trans(img):
     tSave = np.transpose(img,(2,1,0))
@@ -60,30 +26,39 @@ def trans(img):
     tSave = np.flip(tSave,2)
     return tSave
 
-### FIX BOTH OF THESE!!!
+### FIX BOTH OF THESE!!! - Theoretically fixed, but I need a few test runs
 def reg(ref_img, mov_img): # Registers
     # Normalize both images
-    ref_img = (ref_img-np.min(ref_img))/np.max(ref_img)
-    mov_img = (mov_img-np.min(mov_img))/np.max(mov_img)
+    rmax = np.max(ref_img)
+    rmin = np.min(ref_img)
+    mmax = np.max(mov_img)
+    mmin = np.min(mov_img)
+    ref_img = (ref_img-rmin)/rmax
+    mov_img = (mov_img-mmin)/mmax
     # Use estimated optical flow for registration
     v, u = optical_flow_tvl1(ref_img, mov_img) # Alternative is ILK algorithm
     nr, nc = ref_img.shape
     rc, cc = np.meshgrid(np.arange(nr), np.arange(nc), indexing='ij')
     warp_img = warp(mov_img, np.array([rc + v, cc + u]), mode='edge')
+    warp_img = (warp_img*mmax)+mmin
     return v, u, warp_img
 
 def reg2(v, u, mov_img):
+    # Normalize moving image, transform it, and then re-amplify it
+    mmax = np.max(mov_img)
+    mmin = np.min(mov_img)
+    mov_img = (mov_img-mmin)/mmax
+    # Use input optical flow for registration
     nr, nc = mov_img.shape
     rc, cc = np.meshgrid(np.arange(nr), np.arange(nc), indexing='ij')
     warp_img = warp(mov_img, np.array([rc + v, cc + u]), mode='edge')
+    warp_img = (warp_img*mmax)+mmin
     return warp_img
 
 # Structure of function call: python 2P_Proc.py <filtered filename> <> <>
 
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
-
-warnings.filterwarnings('ignore', '.*rank.*') # Ignores warnings in Otsu thresh about bit depth
 
 filename = sys.argv[1]
 
@@ -102,7 +77,6 @@ height = int(filename[filename.find('mic')-3:filename.find('mic')])
 depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 
 # Try registration without otsu thresholding
-# Add a section to register to the newly registered slice
 start = time.perf_counter()
 rhodRegStack = np.empty((imHeight, imWidth))
 rhodRegStack = np.dstack((rhodRegStack, rhodStack[0]))
@@ -117,4 +91,3 @@ for sid in range(1, imSlices):
 rhodRegStack = rhodRegStack[:,:,1:imSlices+1]
 fitcRegStack = fitcRegStack[:,:,1:imSlices+1]
 print(time.perf_counter()-start)
-
