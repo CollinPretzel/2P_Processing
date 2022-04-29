@@ -56,11 +56,13 @@ depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 
 # Apply Otsu Thresholding
 threshStack = np.empty((imHeight, imWidth))
-for image in rhodRegStack:
+for image in rhodStack:
     threshImage = otsuThresh(image, 15)
     threshStack = np.dstack((threshStack, threshImage))
 
 threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
-threshStack = trans(threshStack)
+threshSave = trans(threshStack).astype('float32')
 
-# Save otsu mask, doesn't need fitc counterpart
+# Save otsu mask, doesn't need fitc counterpart, 'ZYX'
+outfilename = filename[0:filename.find('.ome.tif')] + '_OT.tif'
+imwrite(outfilename, threshSave, photometric='minisblack', metadata = {'axes': 'ZYX'})

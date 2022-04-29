@@ -29,7 +29,7 @@ filename = sys.argv[1]
 
 # Read in file
 tif = TiffFile(filename)
-threshStack = tif.asarray() # Imports as 'CZYX', C = 0 is
+threshStack = tif.asarray()
 
 [imSlices, imHeight, imWidth] = threshStack.shape
 
@@ -143,7 +143,7 @@ fullSave = fullMask.astype('float32')
 areaOFN = filename[0:filename.find('.ome.tif')] + '_AREA_Mask.tif'
 eccOFN = filename[0:filename.find('.ome.tif')] + '_ECC_Mask.tif'
 circOFN = filename[0:filename.find('.ome.tif')] + '_CIRC_Mask.tif'
-vesselOFN = filename[0:filename.find('.ome.tif')] + '_FULL_Mask.tif'
+vesselOFN = filename[0:filename.find('.ome.tif')] + '_VESSEL_Mask.tif'
 imwrite(areaOFN, aSave, photometric='minisblack')
 imwrite(eccOFN, eSave, photometric='minisblack')
 imwrite(circOFN, cSave, photometric='minisblack')
