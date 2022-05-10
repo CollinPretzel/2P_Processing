@@ -28,7 +28,14 @@ def trans(img):
 
 ### Maybe add a function for masking the FITC or picking 3-4 slices to determine time
 def analyzeVessel(vessel, bStack):
-    mask = np.empty(bStack.shape)
+    [sliceNums, sliceWidth, sliceHeight] = bStack.shape
+    means = np.zeros((1, sliceNums))
+    for num, t in enumerate(Stack): # Analyze each individual time point
+        mask = t*vessel
+        mask[mask == 0] = np.nan
+        means[1,num] = np.nanmean(mask)
+    return means
+
 
 # Structure of function call: python 2P_Proc.py <filtered filename> <> <>
 
@@ -53,19 +60,20 @@ bol = bolScan[0] # Only need FITC scan for bolus analysis, assuming all slices h
 width = int(veFN[veFN.find('size_')+5:veFN.find('size_')+8])
 height = int(veFN[veFN.find('mic')-3:veFN.find('mic')])
 depth = int(veFN[veFN.find('slice_')+6:veFN.find('micPMT')])
-frame = int(bolFN[bolFN.find('PMT -')-2:bolFN.find('PMT -')])
+frame = int(bolFN[bolFN.find('PMT -')-2:bolFN.find('PMT -')]) # IDs the frame the bolus is shot in
+
 
 # Try registration without otsu thresholding
 start = time.perf_counter()
-label_ve = label(ve)
+vMask = ve[frame,...]
+label_ve = label(vMask)
 vNum = np.max(label_ve)
-means = np.zeros()
+means = np.zeros((vNum, imSlices))
 for v in range(1, vNum+1):
     vessel = np.zeros_like(label_ve)
     idx = np.where(label_ve)
     vessel[idx] = 1 # Now we have just a mask of a singular vessel
-    means[...,v-1] = analyzeVessel(vessel, bol)
+    means[v-1,...] = analyzeVessel(vessel, bol)
 
-rhodRegStack = rhodRegStack[:,:,1:imSlices+1]
-fitcRegStack = fitcRegStack[:,:,1:imSlices+1]
+
 print(time.perf_counter()-start)
