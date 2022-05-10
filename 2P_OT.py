@@ -10,8 +10,6 @@ from skimage import color, data, restoration, exposure, io
 from skimage.morphology import disk, reconstruction
 from skimage.filters import threshold_otsu, rank
 from skimage.util import img_as_ubyte
-from skimage.measure import label, regionprops
-from skimage.registration import optical_flow_tvl1
 from skimage.transform import warp
 
 ### Rewrite for thresholding with otsu and then internal registration
@@ -43,8 +41,8 @@ filename = sys.argv[1]
 # Threshold with rhodamine to identify vessels
 tif = TiffFile(filename)
 scan = tif.asarray() # Imports as 'CZYX', C = 0 is
-fitcStack = scan[0]
-rhodStack = scan[1]
+fitcStack = scan[:,0,...]
+rhodStack = scan[:,0,...]
 
 [imSlices, imHeight, imWidth] = rhodStack.shape
 
@@ -64,5 +62,5 @@ threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
 threshSave = trans(threshStack).astype('float32')
 
 # Save otsu mask, doesn't need fitc counterpart, 'ZYX'
-outfilename = filename[0:filename.find('.ome.tif')] + '_OT.tif'
+outfilename = filename[0:filename.find('_WF.tif')] + '_OT.tif'
 imwrite(outfilename, threshSave, photometric='minisblack', metadata = {'axes': 'ZYX'})

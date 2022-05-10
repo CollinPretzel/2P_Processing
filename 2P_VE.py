@@ -112,6 +112,7 @@ for scan in eMasks:
 
 vMasks = vMasks[:,:,1:imWidth+1]
 
+# Connec ted component issue, might be dependent on depth of scan
 # Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
 lv = label(vMasks)
 regions = regionprops(lv)

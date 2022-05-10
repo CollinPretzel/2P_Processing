@@ -43,7 +43,7 @@ height = int(filename[filename.find('mic')-3:filename.find('mic')])
 depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
 
 ## Create idealized PSF for Weiner Filter, RHODAMINE
-emw = 520
+emw = 520 # One of these needs to change
 args_rhod = {
     'shape': (imWidth, imHeight), # number of samples in z and r direction
     'dims': (200, 200), # size in z and r direction in micrometers - why not 200, and what is r?
@@ -92,8 +92,8 @@ PSF_fitc = PSF_fitc[255:765,255:765]
 rhodProcStack = np.empty((imHeight, imWidth))
 fitcProcStack = np.empty((imHeight, imWidth))
 for imageID in range(0, imSlices):
-    rhodProcImage = restoration.wiener(rhodStack[..., imageID], PSF_rhod, 2.8,clip=False) # What is this 2.8 - balance
-    fitcProcImage = restoration.wiener(fitcStack[..., imageID], PSF_fitc, 2.8,clip=False)
+    rhodProcImage = restoration.wiener(rhodStack[imageID, ...], PSF_rhod, 2.8,clip=False) # What is this 2.8 - balance
+    fitcProcImage = restoration.wiener(fitcStack[imageID, ...], PSF_fitc, 2.8,clip=False)
     rhodProcStack = np.dstack((rhodProcStack, rhodProcImage))
     fitcProcStack = np.dstack((fitcProcStack, fitcProcImage))
 
@@ -106,4 +106,4 @@ fitcSave = trans(fitcProcStack).astype('float32')
 fullSave = np.stack((fitcSave, rhodSave), axis = -1)
 fullSave = np.transpose(fullSave, (3, 0, 1, 2))
 outfilename = filename[0:filename.find('.ome.tif')] + '_WF.tif'
-imwrite(outfilename, fullSave, photometric='minisblack', metadata = {'axes': 'CZYX'})
+imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
