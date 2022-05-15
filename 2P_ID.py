@@ -11,11 +11,10 @@ from skimage.morphology import disk, reconstruction
 from skimage.filters import threshold_otsu, rank
 from skimage.util import img_as_ubyte
 from skimage.measure import label, regionprops
-from skimage.registration import optical_flow_tvl1
-from skimage.transform import warp
+from scipy.ndimage import median_filter
 
 """Two Photon Arteriole/Venule Identification
-Designed to align all images to reduce the impact of breathing or motion artifacts
+Designed to identify arterioles and venules using the bolus through the 
 Function call - 2P_ID.py <VE_filename> <Bolus_filename>
 I still need to reduce the number of imports and see if I can expedite the process
 Save out vessels with 0 being arterioles and 1 being venules"""
@@ -30,14 +29,25 @@ def trans(img):
 def analyzeVessel(vessel, bStack):
     [sliceNums, sliceWidth, sliceHeight] = bStack.shape
     means = np.zeros((1, sliceNums))
-    for num, t in enumerate(Stack): # Analyze each individual time point
+    for num, t in enumerate(bStack): # Analyze each individual time point
         mask = t*vessel
         mask[mask == 0] = np.nan
-        means[1,num] = np.nanmean(mask)
+        means[num] = np.nanmean(mask)
     return means
 
+def eventID(ms):
+    # Identifies the instance/slice of the most likely bolus event
+    # Uses the slope, could use maximum, might be more effective?
+    oldSlope = 0
+    for i in range(1,len(ms)-1):
+        newSlope = ms[i]-ms[i-1]
+        if(newSlope > oldSlope):
+            oldSlope = newSlope
+            index = I
+    return index
 
-# Structure of function call: python 2P_Proc.py <filtered filename> <> <>
+
+# Structure of function call: python 2P_ID.py <filtered filename> <> <>
 
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
@@ -63,17 +73,26 @@ depth = int(veFN[veFN.find('slice_')+6:veFN.find('micPMT')])
 frame = int(bolFN[bolFN.find('PMT -')-2:bolFN.find('PMT -')]) # IDs the frame the bolus is shot in
 
 
-# Try registration without otsu thresholding
+# Analyze each vessel labeled individually
 start = time.perf_counter()
 vMask = ve[frame,...]
 label_ve = label(vMask)
 vNum = np.max(label_ve)
 means = np.zeros((vNum, imSlices))
+events = np.zeros(vNum)
 for v in range(1, vNum+1):
     vessel = np.zeros_like(label_ve)
     idx = np.where(label_ve)
     vessel[idx] = 1 # Now we have just a mask of a singular vessel
-    means[v-1,...] = analyzeVessel(vessel, bol)
+    vSlice = vessel[frame]
+    means[v-1,...] = analyzeVessel(vSlice, bol)
+    # Maybe smooth linear time profile here?
+    means[v-1] = median_filter(means[v-1], 3) # Adjust number for filtering
+    # Identify the largest slope in means (eventID)
+    events[v-1] = eventID(means[v-1])
 
+# Now pick out events and then separate them into arterioles and venules
+
+# Now I need to smooth the linear time profile of the means and then determine the index of their greatest + slope (bolus change)
 
 print(time.perf_counter()-start)

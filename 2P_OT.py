@@ -12,8 +12,7 @@ from skimage.filters import threshold_otsu, rank
 from skimage.util import img_as_ubyte
 from skimage.transform import warp
 
-### Rewrite for thresholding with otsu and then internal registration
-### Not really sure how to tackle this yet
+### Might need to be edited with the significant differences from 3/29
 
 def otsuThresh(img, radius):
     img = img.astype('uint16')
@@ -62,5 +61,5 @@ threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
 threshSave = trans(threshStack).astype('float32')
 
 # Save otsu mask, doesn't need fitc counterpart, 'ZYX'
-outfilename = filename[0:filename.find('_WF.tif')] + '_OT.tif'
+outfilename = filename[0:filename.find('_IR.tif')] + '_OT.tif'
 imwrite(outfilename, threshSave, photometric='minisblack', metadata = {'axes': 'ZYX'})

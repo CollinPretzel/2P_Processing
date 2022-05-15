@@ -63,9 +63,10 @@ for image in threshStack:
         circ = (4*math.pi*area)/(perimeter**2)
         if (area > 100) and (area < 500):# and (ecc < 0.78) and (circ > 0.25):
             aIndices.append(num)
-            #areas.append(area)
+            
             if (ecc < 0.8):
                 eccIndices.append(num)
+                areas.append(area)
                 #eccs.append(ecc)
                 if (circ > 0.15) and (circ < 1):
                     circIndices.append(num)
@@ -112,16 +113,17 @@ for scan in eMasks:
 
 vMasks = vMasks[:,:,1:imWidth+1]
 
-# Connec ted component issue, might be dependent on depth of scan
+# Connected component issue, might be dependent on depth of scan
 # Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
 lv = label(vMasks)
 regions = regionprops(lv)
 fullMask = np.empty((imHeight,imWidth,imSlices))
 vidx = []
 areas = []
+minVol = (imHeight*imWidth*imSlices)/6535 # Experimentally concluded
 for num, x in enumerate(regions):
     area = x.area
-    if (area > 8000):# and (ecc < 0.78) and (circ > 0.25):
+    if (area > 8000): #Calculate approximate volume based on image dimensions
         vidx.append(num)
         areas.append(area)
 
@@ -141,10 +143,10 @@ aSave = aMasks.astype('float32')
 eSave = eMasks.astype('float32')
 cSave = cMasks.astype('float32')
 fullSave = fullMask.astype('float32')
-areaOFN = filename[0:filename.find('.ome.tif')] + '_AREA_Mask.tif'
-eccOFN = filename[0:filename.find('.ome.tif')] + '_ECC_Mask.tif'
-circOFN = filename[0:filename.find('.ome.tif')] + '_CIRC_Mask.tif'
-vesselOFN = filename[0:filename.find('.ome.tif')] + '_VESSEL_Mask.tif'
+areaOFN = filename[0:filename.find('_OT.tif')] + '_AREA_Mask.tif'
+eccOFN = filename[0:filename.find('_OT.tif')] + '_ECC_Mask.tif'
+circOFN = filename[0:filename.find('_OT.tif')] + '_CIRC_Mask.tif'
+vesselOFN = filename[0:filename.find('_OT.tif')] + '_VESSEL_Mask.tif'
 imwrite(areaOFN, aSave, photometric='minisblack')
 imwrite(eccOFN, eSave, photometric='minisblack')
 imwrite(circOFN, cSave, photometric='minisblack')

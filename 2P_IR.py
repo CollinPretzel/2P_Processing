@@ -62,9 +62,9 @@ plt.rcParams.update({'font.size': 12})
 
 filename = sys.argv[1]
 
-# Threshold with rhodamine to identify vessels
+# Use post-WF
 tif = TiffFile(filename)
-scan = tif.asarray() # Imports as 'CZYX', C = 0 is
+scan = tif.asarray() # Imports as 'CZYX', C = 0 is fitc
 fitcStack = scan[0]
 rhodStack = scan[1]
 
@@ -91,3 +91,11 @@ for sid in range(1, imSlices):
 rhodRegStack = rhodRegStack[:,:,1:imSlices+1]
 fitcRegStack = fitcRegStack[:,:,1:imSlices+1]
 print(time.perf_counter()-start)
+
+# Saving process - Make sure to save both channels
+rhodSave = trans(rhodRegStack).astype('float32')
+fitcSave = trans(fitcRegStack).astype('float32')
+fullSave = np.stack((fitcSave, rhodSave), axis = -1)
+fullSave = np.transpose(fullSave, (3, 0, 1, 2))
+outfilename = filename[0:filename.find('_WF.tif')] + '_IR.tif'
+imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
