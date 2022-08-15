@@ -1,4 +1,4 @@
-import sys
+import sys, csv
 import math
 import time
 import warnings
@@ -61,7 +61,9 @@ plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 moveFN = sys.argv[1]
+movePrefix = moveFN[0:moveFN.find('_PMT -')]
 baseFN = sys.argv[2]
+basePrefix = baseFN[0:baseFN.find('_PMT -')]
 
 # Threshold with rhodamine to identify vessels
 tif = TiffFile(moveFN)
@@ -76,11 +78,17 @@ bRhodStack = bScan[1]
 
 [imSlices, imHeight, imWidth] = mRhodStack.shape
 
-# Parameter Extraction from filename - would like to do it from TIFF tags, but running into issues
-# Example filename - 2022-03-29_Baseline_Stack_1_lam_880nm_eom_100_power_6_75_pmt_56_size_400x400mic_pixels_510x510_freq_800_LinAvg_1_range_0mic-neg200mic_slice_1micPMT - PMT [HS_1] _C6.ome
-width = int(moveFN[moveFN.find('size_')+5:moveFN.find('size_')+8])
-height = int(moveFN[moveFN.find('mic')-3:moveFN.find('mic')])
-depth = int(moveFN[moveFN.find('slice_')+6:moveFN.find('micPMT')])
+# Parameter Extraction from csv file
+# Need width, height, starting, ending positions of both scans to check
+# Relative placement prior to registration
+# Import parameters from csv file
+params = []
+with open(csvFile, newline = '') as f:
+    fReader = csv.reader(f, delimiter = ',')
+    for row in fReader:
+        params.append(row)
+
+exw = params[1][3]
 
 # Try registration between baseline (bScan) and moving (mScan)
 start = time.perf_counter()
@@ -98,3 +106,8 @@ mFitcRegStack = mFitcRegStack[:,:,1:imSlices+1]
 print(time.perf_counter()-start)
 
 # Save registered stack
+mRhodRegSave = trans(mRhodRegStack).astype('float32')
+mFitcRegSave = trans(mFitcRegStack).astype('float32')
+fullSave = np.stack((mFitcRegSave,mRhodRegSave), axis = -1)
+fullSave = np.transpose(fullSave, (3, 0, 1, 2))
+outFN = movePrefix + '_' + basePrefix + '.tif'

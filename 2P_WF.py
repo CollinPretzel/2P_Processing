@@ -1,5 +1,5 @@
 import psf
-import sys
+import sys, csv
 import numpy as np
 from tifffile import imwrite
 from tifffile import TiffFile
@@ -22,8 +22,10 @@ plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 filename = sys.argv[1]
+prefix = filename[0:filename.find('_PMT -')]
+csvFile = prefix + '.csv'
 
-# Read in file, seems to invert it? Or the imwrite inverts it
+# Read in file
 tif = TiffFile(filename)
 scan = tif.asarray() # Imports as 'CZYX', C = 0 is
 fitcStack = scan[0]
@@ -35,15 +37,18 @@ rhodStack = scan[1]
 #dStack = np.transpose(dStack, (2,1,0))
 #rStack = np.transpose(rStack, (2,1,0))
 
-# Parameter Extraction from filename - would like to do it from TIFF tags, but running into issues
-# Example filename - 2022-03-29_Baseline_Stack_1_lam_880nm_eom_100_power_6_75_pmt_56_size_400x400mic_pixels_510x510_freq_800_LinAvg_1_range_0mic-neg200mic_slice_1micPMT - PMT [HS_1] _C6.ome
-exw = int(filename[filename.find('nm')-3:filename.find('nm')])
-width = int(filename[filename.find('size_')+5:filename.find('size_')+8])
-height = int(filename[filename.find('mic')-3:filename.find('mic')])
-depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
+# Import parameters from csv file
+params = []
+with open(csvFile, newline = '') as f:
+    fReader = csv.reader(f, delimiter = ',')
+    for row in fReader:
+        params.append(row)
+
+exw = params[1][3]
+
 
 ## Create idealized PSF for Weiner Filter, RHODAMINE
-emw = 520 # One of these needs to change
+emw = 568 # One of these needs to change
 args_rhod = {
     'shape': (imWidth, imHeight), # number of samples in z and r direction
     'dims': (200, 200), # size in z and r direction in micrometers - why not 200, and what is r?
@@ -105,5 +110,5 @@ rhodSave = trans(rhodProcStack).astype('float32')
 fitcSave = trans(fitcProcStack).astype('float32')
 fullSave = np.stack((fitcSave, rhodSave), axis = -1)
 fullSave = np.transpose(fullSave, (3, 0, 1, 2))
-outfilename = filename[0:filename.find('.ome.tif')] + '_WF.tif'
+outfilename = filename[0:filename.find('_PMT -')] + '_WF.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})

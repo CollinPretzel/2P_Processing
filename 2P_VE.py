@@ -1,4 +1,4 @@
-import sys
+import sys, csv
 import math
 import time
 import warnings
@@ -33,11 +33,14 @@ threshStack = tif.asarray()
 
 [imSlices, imHeight, imWidth] = threshStack.shape
 
-# Parameter Extraction from filename - would like to do it from TIFF tags, but running into issues
-# Example filename - 2022-03-29_Baseline_Stack_1_lam_880nm_eom_100_power_6_75_pmt_56_size_400x400mic_pixels_510x510_freq_800_LinAvg_1_range_0mic-neg200mic_slice_1micPMT - PMT [HS_1] _C6.ome
-width = int(filename[filename.find('size_')+5:filename.find('size_')+8])
-height = int(filename[filename.find('mic')-3:filename.find('mic')])
-depth = int(filename[filename.find('slice_')+6:filename.find('micPMT')])
+# Import parameters from csv file
+params = []
+with open(csvFile, newline = '') as f:
+    fReader = csv.reader(f, delimiter = ',')
+    for row in fReader:
+        params.append(row)
+
+exw = params[1][3]
 
 # Remove any excessive labels -= How to make more efficient
 # And how to use the Area masks for branching
