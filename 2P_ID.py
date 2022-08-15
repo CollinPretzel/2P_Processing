@@ -43,7 +43,7 @@ def eventID(ms):
         newSlope = ms[i]-ms[i-1]
         if(newSlope > oldSlope):
             oldSlope = newSlope
-            index = I
+            index = i
     return index
 
 
