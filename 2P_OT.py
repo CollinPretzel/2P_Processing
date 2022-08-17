@@ -13,6 +13,7 @@ from skimage.util import img_as_ubyte
 from skimage.transform import warp
 
 ### Might need to be edited with the significant differences from 3/29
+### And could need editing for future applications to line scans
 
 def otsuThresh(img, radius):
     img = img.astype('uint16')
@@ -45,19 +46,12 @@ rhodStack = scan[:,0,...]
 
 [imSlices, imHeight, imWidth] = rhodStack.shape
 
-# Import parameters from csv file
-params = []
-with open(csvFile, newline = '') as f:
-    fReader = csv.reader(f, delimiter = ',')
-    for row in fReader:
-        params.append(row)
-
-exw = params[1][3]
+# Parameter importation also unnecessary for otsu-thresholding of each baseline scan
 
 # Apply Otsu Thresholding
 threshStack = np.empty((imHeight, imWidth))
 for image in rhodStack:
-    threshImage = otsuThresh(image, 15)
+    threshImage = otsuThresh(image, 15) # Might need to be fine-tuned for current scans... could be an input?
     threshStack = np.dstack((threshStack, threshImage))
 
 threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array

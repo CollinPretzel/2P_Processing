@@ -33,14 +33,7 @@ threshStack = tif.asarray()
 
 [imSlices, imHeight, imWidth] = threshStack.shape
 
-# Import parameters from csv file
-params = []
-with open(csvFile, newline = '') as f:
-    fReader = csv.reader(f, delimiter = ',')
-    for row in fReader:
-        params.append(row)
-
-exw = params[1][3]
+# Parameter importation also likely unnecessary for vessel extraction
 
 # Remove any excessive labels -= How to make more efficient
 # And how to use the Area masks for branching
@@ -117,13 +110,13 @@ for scan in eMasks:
 vMasks = vMasks[:,:,1:imWidth+1]
 
 # Connected component issue, might be dependent on depth of scan
-# Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
+## Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
 lv = label(vMasks)
 regions = regionprops(lv)
 fullMask = np.empty((imHeight,imWidth,imSlices))
 vidx = []
 areas = []
-minVol = (imHeight*imWidth*imSlices)/6535 # Experimentally concluded
+minVol = (imHeight*imWidth*imSlices)/6535 # Experimentally concluded, I'm not sure how else to determine the volume percentage
 for num, x in enumerate(regions):
     area = x.area
     if (area > 8000): #Calculate approximate volume based on image dimensions

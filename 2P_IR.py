@@ -61,7 +61,8 @@ plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 filename = sys.argv[1]
-
+prefix = filename[0:filename.find('_WF')]
+csvFile = prefix + '.csv'
 
 # Use post-WF
 tif = TiffFile(filename)
@@ -71,14 +72,7 @@ rhodStack = scan[1]
 
 [imSlices, imHeight, imWidth] = rhodStack.shape
 
-# Import parameters from csv file
-params = []
-with open(csvFile, newline = '') as f:
-    fReader = csv.reader(f, delimiter = ',')
-    for row in fReader:
-        params.append(row)
-
-exw = params[1][3]
+# Parameter importation unnecessary for internal registration 
 
 # Try registration without otsu thresholding
 start = time.perf_counter()

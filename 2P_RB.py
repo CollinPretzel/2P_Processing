@@ -64,6 +64,8 @@ moveFN = sys.argv[1]
 movePrefix = moveFN[0:moveFN.find('_PMT -')]
 baseFN = sys.argv[2]
 basePrefix = baseFN[0:baseFN.find('_PMT -')]
+mCSV = movePrefix + '.csv'
+bCSV = basePrefix + '.csv'
 
 # Threshold with rhodamine to identify vessels
 tif = TiffFile(moveFN)
@@ -76,33 +78,85 @@ bScan = tif.asarray()
 bFitcStack = bScan[0]
 bRhodStack = bScan[1]
 
-[imSlices, imHeight, imWidth] = mRhodStack.shape
+[mImSlices, mImHeight, mImWidth] = mRhodStack.shape
+[bImSlices, bImHeight, bImWidth] = bRhodStack.shape
 
 # Parameter Extraction from csv file
 # Need width, height, starting, ending positions of both scans to check
 # Relative placement prior to registration
-# Import parameters from csv file
-params = []
-with open(csvFile, newline = '') as f:
+mParams = []
+with open(mCSV, newline = '') as f:
     fReader = csv.reader(f, delimiter = ',')
     for row in fReader:
-        params.append(row)
+        mParams.append(row)
 
-exw = params[1][3]
+bParams = []
+with open(bCSV, newline = '') as f:
+    fReader = csv.reader(f, delimiter = ',')
+    for row in fReader:
+        bParams.append(row)
+
+mStart = mParams[1][3]
+mEnd = mParams[1][4]
+bStart = bParams[1][3]
+bEnd = bParams[1][4]
+
+## Check whether the scans are physically aligned to the same space
+## If not, pad scans with empty arrays for total alignement
+# Starting position
+if bStart != mStart:
+    if bStart > mStart: # Moving scan starts above the baseline
+        topBSlices = (bStart - mStart)/((bStart-bEnd)/bImSlices)
+        newBFitc = np.zeros((bImSlices+topBSlices, bImHeight, bImWidth))
+        newBRhod = np.zeros((bImSlices+topBSlices, bImHeight, bImWidth))
+        [bImSlices, bImHeight, bImWidth] = newBRhod.shape
+        newBFitc[topBSlices:bImSlices,:,:] = bFitcStack
+        newBRhod[topBSlices:bImSlices,:,:] = bRhodStack
+        bFitcStack = newBFitc
+        bRhodStack = newBRhod
+    else:
+        topMSlices = (mStart - bStart)/((mStart-mEnd)/mImSlices)
+        newMFitc = np.zeros((mImSlices+topMSlices, mImHeight, mImWidth))
+        newMRhod = np.zeros((mImSlices+topMSlices, mImHeight, mImWidth))
+        [mImSlices, mImHeight, mImWidth] = newMRhod.shape
+        newMFitc[topMSlices:mImSlices,:,:] = mFitcStack
+        newMRhod[topMSlices:mImSlices,:,:] = mRhodStack
+        mFitcStack = newMFitc
+        mRhodStack = newMRhod
+# Ending positions
+if bEnd != mEnd:
+    if bEnd > mEnd: # Moving scan ends above the baseline
+        botBSlices = (bEnd - mEnd)/((bStart-bEnd)/bImSlices)
+        newBFitc = np.zeros((bImSlices+botBSlices, bImHeight, bImWidth))
+        newBRhod = np.zeros((bImSlices+botBSlices, bImHeight, bImWidth))
+        newBFitc[0:bImSlices,:,:] = bFitcStack
+        newBRhod[0:bImSlices,:,:] = bRhodStack
+        [bImSlices, bImHeight, bImWidth] = newBRhod.shape
+        bFitcStack = newBFitc
+        bRhodStack = newBRhod
+    else:
+        botMSlices = (mEnd - mStart)/((mStart-mEnd)/mImSlices)
+        newMFitc = np.zeros((mImSlices+botMSlices, mImHeight, mImWidth))
+        newMRhod = np.zeros((mImSlices+botMSlices, mImHeight, mImWidth))
+        newMFitc[0:mImSlices,:,:] = mFitcStack
+        newMRhod[0:mImSlices,:,:] = mRhodStack
+        [mImSlices, mImHeight, mImWidth] = newMRhod.shape
+        mFitcStack = newMFitc
+        mRhodStack = newMRhod
 
 # Try registration between baseline (bScan) and moving (mScan)
 start = time.perf_counter()
-mRhodRegStack = np.empty((imHeight, imWidth))
-mFitcRegStack = np.empty((imHeight, imWidth))
+mRhodRegStack = np.empty((mImHeight, mImWidth))
+mFitcRegStack = np.empty((mImHeight, mImWidth))
 
-for sid in range(0, imSlices):
+for sid in range(0, mImSlices):
     v, u, rhodImg = reg(bRhodStack[sid], mRhodStack[sid])
     fitcImg = reg2(v, u, mFitcStack[sid])
     rhodRegStack = np.dstack((mRhodRegStack, rhodImg))
     fitcRegStack = np.dstack((mFitcRegStack, fitcImg))
 
-mRhodRegStack = mRhodRegStack[:,:,1:imSlices+1]
-mFitcRegStack = mFitcRegStack[:,:,1:imSlices+1]
+mRhodRegStack = mRhodRegStack[:,:,1:mImSlices+1]
+mFitcRegStack = mFitcRegStack[:,:,1:mImSlices+1]
 print(time.perf_counter()-start)
 
 # Save registered stack

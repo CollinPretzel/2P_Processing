@@ -44,7 +44,7 @@ with open(csvFile, newline = '') as f:
     for row in fReader:
         params.append(row)
 
-exw = params[1][3]
+exw = params[1][2]
 
 
 ## Create idealized PSF for Weiner Filter, RHODAMINE
@@ -53,7 +53,7 @@ args_rhod = {
     'shape': (imWidth, imHeight), # number of samples in z and r direction
     'dims': (200, 200), # size in z and r direction in micrometers - why not 200, and what is r?
     'ex_wavelen': exw,
-    'em_wavelen': emw, # Conventionally 520... I think
+    'em_wavelen': emw, # Conventionally 520, change this to fit the used filters
     'num_aperture': 0.95,
     'refr_index': 1.35, # refraction index of ultrasound gel
     'magnification': 20,
@@ -76,7 +76,7 @@ args_fitc = {
     'shape': (imWidth, imHeight), # number of samples in z and r direction
     'dims': (200, 200), # size in z and r direction in micrometers - why not 200, and what is r?
     'ex_wavelen': exw,
-    'em_wavelen': emw, # Conventionally 520... I think
+    'em_wavelen': emw, # Conventionally 520, change this to match used filters
     'num_aperture': 0.95,
     'refr_index': 1.35, # refraction index of ultrasound gel
     'magnification': 20,
