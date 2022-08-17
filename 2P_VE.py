@@ -18,7 +18,9 @@ def trans(img):
     tSave = np.flip(tSave,2)
     return tSave
 
-# Structure of function call: python 2P_VE.py <Otsu filename> <> <>
+# Structure of function call: python 2P_VE.py <Otsu filename>
+"""2P_VE.py <Otsu_thresh filename> - Extracts the vessels from the thresholded scan
+   using connected components analysis"""
 
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})

@@ -53,7 +53,11 @@ plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 veFN = sys.argv[1]
+vePrefix = veFN[0:veFN.find('_VESSEL_Mask.tif')]
+veCSV = vePrefix + '.csv'
 bolFN = sys.argv[2]
+bolPrefix = bolFN[0:bolFN.find('_PMT -')]
+bolCSV = bolPrefix + '.csv'
 
 # Threshold with rhodamine to identify vessels
 tif = TiffFile(veFN)
@@ -65,34 +69,61 @@ bol = bolScan[0] # Only need FITC scan for bolus analysis, assuming all slices h
 [imSlices, imHeight, imWidth] = ve.shape
 
 # Import parameters from csv file
-params = []
-with open(csvFile, newline = '') as f:
+veParams = []
+with open(veCSV, newline = '') as f:
     fReader = csv.reader(f, delimiter = ',')
     for row in fReader:
-        params.append(row)
+        veParams.append(row)
 
-exw = params[1][3]
+bolParams = []
+with open(bolCSV, newline = '') as f:
+    fReader = csv.reader(f, delimiter = ',')
+    for row in fReader:
+        bolParams.append(row)
+
+veStart = veParams[1][3]
+veEnd = veParams[1][4]
+veRes = (veEnd - veStart)/imSlices # Units of um/slice
+bolPos = bolParams[1][3]
+frame = round((bolPos-veStart)/veRes) # Calculates the approximate frame number that correlates to bolus
 
 # Analyze each vessel labeled individually
 start = time.perf_counter()
+label_ve = label(ve)
 vMask = ve[frame,...]
-label_ve = label(vMask)
-vNum = np.max(label_ve)
+label_vMask = label(vMask)
+vNum = np.max(label_vMask)
 means = np.zeros((vNum, imSlices))
+filtMeans = means
 events = np.zeros(vNum)
 for v in range(1, vNum+1):
-    vessel = np.zeros_like(label_ve)
-    idx = np.where(label_ve)
+    vessel = np.zeros_like(label_vMask)
+    idx = np.where(label_vMask == vNum, label_vMask)
     vessel[idx] = 1 # Now we have just a mask of a singular vessel
-    vSlice = vessel[frame]
-    means[v-1,...] = analyzeVessel(vSlice, bol)
+    means[v-1,...] = analyzeVessel(vessel, bol)
     # Maybe smooth linear time profile here?
-    means[v-1] = median_filter(means[v-1], 3) # Adjust number for filtering
+    filtMeans[v-1] = median_filter(means[v-1], 3) # Adjust number for filtering
     # Identify the largest slope in means (eventID)
-    events[v-1] = eventID(means[v-1])
+    events[v-1] = eventID(filtMeans[v-1])
 
 # Now pick out events and then separate them into arterioles and venules
+# Maybe assess the mean value of event times as an indicator of As and Vs
+midpoint = events.mean()
+arterioles = np.zeros_like(ve)
+venules = np.zeros_like(ve)
+for v in range(1, vNum+1):
+    if events[v-1] > midpoint: # The bolus is flushing through a venule
+        vIdx = np.where(label_ve == v, label_ve)
+        venules[vIdx] = 1
+    else:
+        vIdx = np.where(label_ve == v, label_ve)
+        arterioles[vIdx] = 1
 
-# Now I need to smooth the linear time profile of the means and then determine the index of their greatest + slope (bolus change)
-
+# Save out vessel masks
+artSave = trans(arterioles).astype('float32')
+venSave = trans(venules).astype('float32')
+artFN = vePrefix + '_art.tif'
+venFN = vePrefix + '_ven.tif'
+imwrite(artFN, artSave, photometric='minisblack')
+imwrite(venFN, venSave, photometric='minisblack')
 print(time.perf_counter()-start)

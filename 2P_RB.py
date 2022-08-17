@@ -43,6 +43,8 @@ def reg(ref_img, mov_img): # Registers
     warp_img = (warp_img*mmax)+mmin
     return v, u, warp_img
 
+# reg 2 is a second registration used to register the FITC scans 
+# which should have few identifiable landmarks
 def reg2(v, u, mov_img):
     # Normalize moving image, transform it, and then re-amplify it
     mmax = np.max(mov_img)
