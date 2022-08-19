@@ -53,25 +53,29 @@ numReps = 4
 secWidth = imWidth/4
 secHeight = imHeight/4
 numSects = 16
-
-corrRhod = np.zeros((imSlices/numReps, imHeight, imWidth))
-corrFitc = corrRhod
+corrRhodStack = np.zeros((imSlices/numReps, imHeight, imWidth))
+corrFitcStack = np.zeros((imSlices/numReps, imHeight, imWidth))
 
 # This method assumes that there are multiple (numReps) scans taken for every desired depth
 for sliceNum in range(0,imSlices,numReps):
-    chunk = rhodStack[sliceNum:sliceNum+numReps]
-    segments = np.zeros((numSects, numReps, secHeight, secWidth))
-    corrSeg = np.zeros((numSects, secHeight, secWidth))
+    rhodChunk = rhodStack[sliceNum:sliceNum+numReps]
+    fitcChunk = fitcStack[sliceNum:sliceNum+numReps]
+    rhodSegments = np.zeros((numSects, numReps, secHeight, secWidth))
+    fitcSegments = rhodSegments
+    corrRhodSeg = np.zeros((numSects, secHeight, secWidth))
+    corrFitcSeg = np.zeros((numSects, secHeight, secWidth))
+    corrRhodImg = np.zeros((imSlices/numReps, imHeight, imWidth))
+    corrFitcImg = corrRhodImg
     i = 0
     for row in range(0,4):
         for col in range(0,4):
-            segments[i,:,:,:] = chunk[:,row*secHeight:(row+1)*secHeight,col*secWidth:(row+1)*secWidth]
+            rhodSegments[i,:,:,:] = rhodChunk[:,row*secHeight:(row+1)*secHeight,col*secWidth:(row+1)*secWidth]
             i += 1
     CCtable = np.zeros((numReps, numReps, numSects))
     for sectNum in range(0,numSects):
         for frame2 in range(0,numReps):
             for frame1 in range(0,numReps):
-                cc = CCcalc(segments[sectNum,frame1,:,:],segments[sectNum,frame2,:,:])
+                cc = CCcalc(rhodSegments[sectNum,frame1,:,:],rhodSegments[sectNum,frame2,:,:])
                 CCtable[frame1,frame2,sectNum] = cc
     uniqueCCs = 0
     for k in range(1,numReps):
@@ -116,7 +120,20 @@ for sliceNum in range(0,imSlices,numReps):
             else: # Final pairing
                 frame1 = numReps-2
                 frame2 = numReps-1
-            corrSeg[i] += segments[i,frame1,:,:] + segments[i,frame2,:,:]
+            corrRhodSeg[i] += rhodSegments[i,frame1,:,:] + rhodSegments[i,frame2,:,:]
+            corrFitcSeg[i] += fitcSegments[i,frame1,:,:] + fitcSegments[i,frame2,:,:]
         # Take the average of all added segments
-        corrSeg[i] = corrSeg[i]/(2*(j+1))
+        corrRhodSeg[i] = corrRhodSeg[i]/(2*(j+1))
+        corrFitcSeg[i] = corrFitcSeg[i]/(2*(j+1))
     # Now to replace all corrected segments into their relevant frame
+    for i in range(0,numSects):
+        frame1 += 1
+    corrRhodStack = np.dstack(corrRhodStack, corrRhodImg)
+    corrFitcStack = np.dstack(corrFitcStack, corrFitcImg)
+
+rhodSave = trans(corrRhodStack).astype('float32')
+fitcSave = trans(corrFitcStack).astype('float32')
+fullSave = np.stack((fitcSave, rhodSave), axis = -1)
+fullSave = np.transpose(fullSave, (3, 0, 1, 2))
+outfilename = prefix + '_AR.tif'
+imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
