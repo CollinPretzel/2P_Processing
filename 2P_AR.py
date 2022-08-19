@@ -126,8 +126,12 @@ for sliceNum in range(0,imSlices,numReps):
         corrRhodSeg[i] = corrRhodSeg[i]/(2*(j+1))
         corrFitcSeg[i] = corrFitcSeg[i]/(2*(j+1))
     # Now to replace all corrected segments into their relevant frame
-    for i in range(0,numSects):
-        frame1 += 1
+    i = 0
+    for row in range(0,4):
+        for col in range(0,4):
+            corrRhodImg[:,row*secHeight:(row+1)*secHeight,col*secWidth:(col+1)*secWidth] = corrRhodSeg[i]
+            corrFitcImg[:,row*secHeight:(row+1)*secHeight,col*secWidth:(col+1)*secWidth] = corrFitcSeg[i]
+            i += 1
     corrRhodStack = np.dstack(corrRhodStack, corrRhodImg)
     corrFitcStack = np.dstack(corrFitcStack, corrFitcImg)
 
