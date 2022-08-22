@@ -5,7 +5,7 @@ echo -n "Name of directory for scan:";
 read dir;
 echo $dir;
 # Define scan time
-for SCAN in $dir/*; do
+for SCAN in ${"$dir/*_C6.ome.tif"}; do
 # Check and only upload 1 of the 
     echo $SCAN
     export SCAN
@@ -18,7 +18,7 @@ for SCAN in $dir/*; do
     # Take the prefix for scan and then assign a new value to it
     if [[$file = *"Timelapse"*]|[$file = *"Bolus"*]]; then
         echo Processing Timelapse
-        
+        echo ${"Finished processing ${prefix}"}
     else
         echo Processing Z-stack
         # Should process Timepoints and all Z-stacks
@@ -27,3 +27,4 @@ for SCAN in $dir/*; do
         #python 2P_AR.py $SCAN
         python 2P_OT.py $IR
         python 2P_VE.py $OT
+        echo ${"Finished processing ${prefix}"}
