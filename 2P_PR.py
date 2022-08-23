@@ -54,7 +54,7 @@ artPR = np.zeros_like(arterioles)
 venPR = artPR
 
 artPRad = 10
-venPRad = 7.5
+venPRad = 8
 
 for sliceNum in imSlices:
     artRadPix = int(artPRad*height/imHeight) # Number of pixels in a 10 um radius, maybe it should be diameter?
