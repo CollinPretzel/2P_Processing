@@ -110,5 +110,5 @@ rhodSave = trans(rhodProcStack).astype('float32')
 fitcSave = trans(fitcProcStack).astype('float32')
 fullSave = np.stack((fitcSave, rhodSave), axis = -1)
 fullSave = np.transpose(fullSave, (3, 0, 1, 2))
-outfilename = filename[0:filename.find('_PMT -')] + '_WF.tif'
+outfilename = prefix + '_WF.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})

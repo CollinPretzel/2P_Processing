@@ -13,18 +13,21 @@ for SCAN in ${"$dir/*_C6.ome.tif"}; do
     python 2P_DA.py $SCAN
     python 2P_WF.py $SCAN
     WF="${prefix}_WF.tif"
-    python 2P_IR.py $WF
     IR="${prefix}_IR.tif"
     # Take the prefix for scan and then assign a new value to it
     if [[$file = *"Timelapse"*]|[$file = *"Bolus"*]]; then
         echo Processing Timelapse
+        python 2P_IR.py $WF
         echo ${"Finished processing ${prefix}"}
     else
         echo Processing Z-stack
         # Should process Timepoints and all Z-stacks
         OT="${prefix}_OT.tif"
         #VE="${prefix}_VE.tif"
-        #python 2P_AR.py $SCAN
+        #python 2P_AR.py $WF
+        #AR="${prefix}_AR.tif"
+        python 2P_IR.py $WF
+        #python 2P_IR.py $AR
         python 2P_OT.py $IR
         python 2P_VE.py $OT
         echo ${"Finished processing ${prefix}"}

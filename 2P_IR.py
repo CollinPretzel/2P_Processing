@@ -61,7 +61,7 @@ plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 filename = sys.argv[1]
-prefix = filename[0:filename.find('_WF')]
+prefix = filename[0:filename.find('_WF')] # Might have to change to _AR
 csvFile = prefix + '.csv'
 
 # Use post-WF
@@ -95,5 +95,5 @@ rhodSave = trans(rhodRegStack).astype('float32')
 fitcSave = trans(fitcRegStack).astype('float32')
 fullSave = np.stack((fitcSave, rhodSave), axis = -1)
 fullSave = np.transpose(fullSave, (3, 0, 1, 2))
-outfilename = filename[0:filename.find('_WF.tif')] + '_IR.tif'
+outfilename = prefix + '_IR.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})

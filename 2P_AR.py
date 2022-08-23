@@ -39,7 +39,7 @@ def CCcalc(sect1, sect2):
 
 # General structure involves iterating over x number of slices
 filename = sys.argv[1]
-prefix = filename[0:filename.find('_PMT -')]
+prefix = filename[0:filename.find('_WF')]
 
 # Read in file
 tif = TiffFile(filename)
