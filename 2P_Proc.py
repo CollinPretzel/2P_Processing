@@ -18,11 +18,11 @@ from skimage.transform import warp
 ### Might be easier to bashscript
 
 maindir = sys.argv[1]
-keyFiles = glob.glob('*_C7*')
+keyFiles = glob.glob(maindir + '\\' + '*_C7*')
 
 for filename in keyFiles:
     print("Processing " + filename)
-    prefix = filename[0:filename.find('_PMT -')]
+    prefix = filename[0:filename.find('PMT -')]
     os.system("python 2P_DA.py " + filename)
     os.system("python 2P_WF.py " + filename)
     if ("timeseries" in filename) or ("bolus" in filename):

@@ -22,7 +22,7 @@ plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 filename = sys.argv[1]
-prefix = filename[0:filename.find('_PMT -')]
+prefix = filename[0:filename.find('PMT -')]
 csvFile = prefix + '.csv'
 
 # Read in file
