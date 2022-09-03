@@ -1,4 +1,6 @@
 import sys, csv
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 """2 Photon Data Acquisition - A method to compile a csv with the relevant data from screenshots
    function: python 2P_DA.py <individual_2P_scan>"""
@@ -8,6 +10,15 @@ data = []
 
 filename = sys.argv[1]
 prefix = filename[0:filename.find('_PMT -')]
+
+# Try to open a jpg forit
+try:
+    imgName = prefix + '.jpg'
+    img = mpimg.imread(imgName)
+    imgplot = plt.imshow(img)
+    plt.show(block=False)
+except:
+    print("There isno nicely named jpeg for this. Find it yourself")
 
 print(prefix + '\n')
 for dataType in dataTypes:

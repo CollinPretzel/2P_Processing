@@ -122,8 +122,8 @@ for v in range(1, vNum+1):
 # Save out vessel masks
 artSave = trans(arterioles).astype('float32')
 venSave = trans(venules).astype('float32')
-artFN = vePrefix + '_art.tif'
-venFN = vePrefix + '_ven.tif'
+artFN = 'Arterioles.tif'
+venFN = 'Venules.tif'
 imwrite(artFN, artSave, photometric='minisblack')
 imwrite(venFN, venSave, photometric='minisblack')
 print(time.perf_counter()-start)
