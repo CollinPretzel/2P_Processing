@@ -56,6 +56,7 @@ def reg2(v, u, mov_img):
     return warp_img
 
 # Structure of function call: python 2P_Proc.py <filtered filename> <> <>
+start = time.time()
 
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
@@ -97,3 +98,5 @@ fullSave = np.stack((fitcSave, rhodSave), axis = -1)
 fullSave = np.transpose(fullSave, (3, 0, 1, 2))
 outfilename = prefix + '_IR.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
+end = time.time()
+print(end-start + ' seconds to finish internal registration')

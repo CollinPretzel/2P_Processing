@@ -81,10 +81,10 @@ with open(bolCSV, newline = '') as f:
     for row in fReader:
         bolParams.append(row)
 
-veStart = veParams[1][3]
-veEnd = veParams[1][4]
+veStart = int(veParams[1][3])
+veEnd = int(veParams[1][4])
 veRes = (veEnd - veStart)/imSlices # Units of um/slice
-bolPos = bolParams[1][3]
+bolPos = int(bolParams[1][3])
 frame = round((bolPos-veStart)/veRes) # Calculates the approximate frame number that correlates to bolus
 
 # Analyze each vessel labeled individually

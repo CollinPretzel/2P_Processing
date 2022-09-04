@@ -9,7 +9,7 @@ dataTypes = ['Width','Height','Wavelength','Start','End','Stack/TimeSeries','Cur
 data = []
 
 filename = sys.argv[1]
-prefix = filename[0:filename.find('PMT -')]
+prefix = filename[0:filename.find('PMT')]
 
 # Try to open a jpg forit
 try:

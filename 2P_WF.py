@@ -1,5 +1,6 @@
 import psf
 import sys, csv
+import time
 import numpy as np
 from tifffile import imwrite
 from tifffile import TiffFile
@@ -17,12 +18,13 @@ def trans(img):
    return tSave
 
 # Structure of function call: python 2P_Proc.py <filename> <> <>
-
+start = time.time()
 plt.rcParams['figure.figsize'] = [10, 10]
 plt.rcParams.update({'font.size': 12})
 
 filename = sys.argv[1]
-prefix = filename[0:filename.find('PMT -')]
+print(filename)
+prefix = filename[0:filename.find('PMT')]
 csvFile = prefix + '.csv'
 
 # Read in file
@@ -44,7 +46,7 @@ with open(csvFile, newline = '') as f:
     for row in fReader:
         params.append(row)
 
-exw = params[1][2]
+exw = int(params[1][2])
 
 
 ## Create idealized PSF for Weiner Filter, RHODAMINE
@@ -112,3 +114,5 @@ fullSave = np.stack((fitcSave, rhodSave), axis = -1)
 fullSave = np.transpose(fullSave, (3, 0, 1, 2))
 outfilename = prefix + '_WF.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
+end = time.time()
+print(end-start + 'seconds for completion of Wiener Filtering')
