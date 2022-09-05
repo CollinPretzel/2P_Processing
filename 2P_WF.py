@@ -111,8 +111,8 @@ fitcProcStack = fitcProcStack[:,:,1:imSlices+1]
 rhodSave = trans(rhodProcStack).astype('float32')
 fitcSave = trans(fitcProcStack).astype('float32')
 fullSave = np.stack((fitcSave, rhodSave), axis = -1)
-fullSave = np.transpose(fullSave, (3, 0, 1, 2))
+fullSave = np.transpose(fullSave, (0, 3, 1, 2))
 outfilename = prefix + '_WF.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
 end = time.time()
-print(end-start + 'seconds for completion of Wiener Filtering')
+print(str(end-start) + 'seconds for completion of Wiener Filtering')

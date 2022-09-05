@@ -99,4 +99,4 @@ fullSave = np.transpose(fullSave, (3, 0, 1, 2))
 outfilename = prefix + '_IR.tif'
 imwrite(outfilename, fullSave, imagej=True, photometric='minisblack', metadata = {'axes': 'ZCYX'})
 end = time.time()
-print(end-start + ' seconds to finish internal registration')
+print(str(end-start) + ' seconds to finish internal registration')

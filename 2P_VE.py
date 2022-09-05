@@ -58,7 +58,11 @@ for image in threshStack:
         area = x.area_filled # What if you did convex area, or feret_diameter_max
         perimeter = x.perimeter
         ecc = x.eccentricity
-        circ = (4*math.pi*area)/(perimeter**2)
+        if(perimeter > 0):
+            circ = (4*math.pi*area)/(perimeter**2)
+        else:
+            circ = 10000
+        
         if (area > 100) and (area < 500):# and (ecc < 0.78) and (circ > 0.25):
             aIndices.append(num)
             
@@ -97,7 +101,7 @@ cMasks = cMasks[:,:,1:imSlices+1]
 ## Takes 68.5 seconds for a 510x201x510 scan
 
 vMasks = np.empty((imHeight, imSlices))
-for scan in eMasks:
+for scan in cMasks:
     scan = np.array(scan)
     exScan = np.zeros_like(scan)
     for rid, row in enumerate(scan):
@@ -110,6 +114,7 @@ for scan in eMasks:
     vMasks = np.dstack((vMasks,exScan))
 
 vMasks = vMasks[:,:,1:imWidth+1]
+vMasks = np.transpose(vMasks,(0,2,1))
 
 # Connected component issue, might be dependent on depth of scan
 ## Another connected component analysis, 3D, to isolate and remove the smaller regions to try to reduce error
@@ -121,7 +126,7 @@ areas = []
 minVol = (imHeight*imWidth*imSlices)/6535 # Experimentally concluded, I'm not sure how else to determine the volume percentage
 for num, x in enumerate(regions):
     area = x.area
-    if (area > 8000): #Calculate approximate volume based on image dimensions
+    if (area > minVol): #Calculate approximate volume based on image dimensions
         vidx.append(num)
         areas.append(area)
 

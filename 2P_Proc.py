@@ -32,9 +32,8 @@ for filename in keyFiles:
         print("Finished processing this timeseries")
     else:
         print("This should be a Z Stack")
-        os.system("python 2P_IR.py " + prefix + "_WF.tif")
         #Could throw in AR here if it ever happens
-        os.system("python 2P_OT.py " + prefix + "_IR.tif")
+        os.system("python 2P_OT.py " + prefix + "_WF.tif")
         os.system("python 2P_VE.py " + prefix + "_OT.tif")
 
 
