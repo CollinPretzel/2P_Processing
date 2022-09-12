@@ -41,8 +41,8 @@ filename = sys.argv[1]
 # Threshold with rhodamine to identify vessels
 tif = TiffFile(filename)
 scan = tif.asarray() # Imports as 'CZYX', C = 0 is
-fitcStack = scan[:,0,...]
-rhodStack = scan[:,0,...]
+fitcStack = scan[0]
+rhodStack = scan[0]
 
 [imSlices, imHeight, imWidth] = rhodStack.shape
 
@@ -58,5 +58,5 @@ threshStack = threshStack[:,:,1:imSlices+1] # removes initial empty array
 threshSave = trans(threshStack).astype('float32')
 
 # Save otsu mask, doesn't need fitc counterpart, 'ZYX'
-outfilename = filename[0:filename.find('_IR.tif')] + '_OT.tif'
+outfilename = filename[0:filename.find('.tif')-3] + '_OT.tif'
 imwrite(outfilename, threshSave, photometric='minisblack', metadata = {'axes': 'ZYX'})

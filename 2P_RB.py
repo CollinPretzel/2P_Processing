@@ -98,10 +98,10 @@ with open(bCSV, newline = '') as f:
     for row in fReader:
         bParams.append(row)
 
-mStart = mParams[1][3]
-mEnd = mParams[1][4]
-bStart = bParams[1][3]
-bEnd = bParams[1][4]
+mStart = int(mParams[1][3])
+mEnd = int(mParams[1][4])
+bStart = int(bParams[1][3])
+bEnd = int(bParams[1][4])
 
 ## Check whether the scans are physically aligned to the same space
 ## If not, pad scans with empty arrays for total alignement

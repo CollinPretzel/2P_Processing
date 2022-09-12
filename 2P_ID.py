@@ -81,10 +81,10 @@ with open(bolCSV, newline = '') as f:
     for row in fReader:
         bolParams.append(row)
 
-veStart = veParams[1][3]
-veEnd = veParams[1][4]
+veStart = int(veParams[1][3])
+veEnd = int(veParams[1][4])
 veRes = (veEnd - veStart)/imSlices # Units of um/slice
-bolPos = bolParams[1][3]
+bolPos = int(bolParams[1][3])
 frame = round((bolPos-veStart)/veRes) # Calculates the approximate frame number that correlates to bolus
 
 # Analyze each vessel labeled individually
@@ -122,8 +122,8 @@ for v in range(1, vNum+1):
 # Save out vessel masks
 artSave = trans(arterioles).astype('float32')
 venSave = trans(venules).astype('float32')
-artFN = vePrefix + '_art.tif'
-venFN = vePrefix + '_ven.tif'
+artFN = 'Arterioles.tif'
+venFN = 'Venules.tif'
 imwrite(artFN, artSave, photometric='minisblack')
 imwrite(venFN, venSave, photometric='minisblack')
 print(time.perf_counter()-start)
