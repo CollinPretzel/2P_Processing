@@ -4,14 +4,14 @@
 These scripts are designed to take the data acquired from the BIO5 Two-Photon system, perform requisite pre-processing (e.g., Weiner filtering, Windowing Motion
 Correction, and various registrations) and extract and identify all possible transverse arterioles and venules from bolus scans, as well as create reasonable
 perivascular spaces around the transverse vessels. The classification of vessels and registration between different 3-dimensional scans currently have to be done
-outside the bash processing script. Note: The bash processing script s currently designed for use on the University of Arizona HPC.
+outside the bash processing script. Note: The bash processing script s currently designed for use on the University of Arizona HPC, but the python processing script is available for any Python environment. It may still need some edits, but it can work as a reference for processing each scan time.
 
 ### General Pipeline
 2P_DA.py <All_scan types>
 
 2P_WF.py <All_scan_types>
 
-2P_AR.py <3D_scan_types> <Potentially all...?>
+2P_AR.py <3D_scan_types> *Only if stacks have more than 2 scans per layer*
 
 2P_IR.py <All_scan_types>
 
@@ -45,7 +45,7 @@ Designed to align all images in a singular scan to reduce the impact of breathin
 
 ### 2P_OT.py - Otsu Thresholding
 
-*Need to provide a description here*
+This script processes a 3D scan and thresholds each image using an adaptive filter - excellent at identifying edges of a similar size as the filter.
 
 ### 2P_PR.py - Perivascular Regions
 
@@ -54,16 +54,20 @@ around the vessel, then subtracting the vessel masks from these disks.
 
 ### 2P_proc.sh - Processing Bash Script
 
-*Also need to provide another description here*
+Script intended to run on HPC using the bash terminal. Should run through all preprocessing functions for files, leaving only registration and analysis functions left.
+
+### 2P_Proc.py - Processing Python Script
+
+Serves the same function as the bash script, but might need some edits dependin on its use.
 
 ### 2P_RB.py - Registration Between (Scans)
 
-*Here too!*
+Uses a warping transform to align vessels. *VERIFY RESULTS*
 
 ### 2P_VE.py - Vessel Extraction
 
-Extracts the vessels from the thresholded scan using connected components analysis
+Extracts the vessels from the thresholded scan using connected components analysis.
 
 ### 2P_WF.py - Wiener Filtering
 
-*Ahh one last one*
+Applies a generalized point-spread function to filter all scans for initial denoising.
